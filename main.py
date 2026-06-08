@@ -733,7 +733,7 @@ async def cmd_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_setemoji(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-msg = update.message
+    msg = update.message
     emoji = " ".join(ctx.args).strip() if ctx.args else ""
     if not emoji:
         return await msg.reply_text("❌ Usage: /setemoji <emoji>", **_reply(msg.message_id))
