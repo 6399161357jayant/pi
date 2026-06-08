@@ -732,7 +732,7 @@ async def cmd_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                          parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
 
 
-async def cmd_setemoji(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def cmd_setemoji(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     register_user(update)
 
