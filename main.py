@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 import random
 from datetime import datetime, timedelta
@@ -1065,54 +1066,54 @@ async def handle_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    if is_group(update) and not should_respond(update):
-        return
-    await update.message.reply_text(
-        random.choice(["Bhai voice message mat bhejo 😭", "Sunne ka mann nahi 😜", "Text kar yaar 😂"]),
-        **_reply(update.message.message_id),
-    )
-
-
 async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if is_group(update) and not should_respond(update):
         return
+
     text = (update.message.text or "").strip()
     if not text:
         return
-   if not gemini_model:
-        await update.message.reply_text("Abhi AI chat available nahi hai! 😅", **_reply(update.message.message_id))
+
+    if not gemini_model:
+        await update.message.reply_text(
+            "Abhi AI chat available nahi hai! 😅",
+            **_reply(update.message.message_id)
+        )
         return
+
     uid = update.effective_user.id
     history = conv_history[uid]
+
     history.append({"role": "user", "content": text})
     if len(history) > MAX_HISTORY:
         del history[:len(history) - MAX_HISTORY]
-        
-try:
-    await update.effective_chat.send_action("typing")
 
-    prompt = SYSTEM_PROMPT + "\n\n"
+    try:
+        await update.effective_chat.send_action("typing")
 
-    for msg in history:
-        role = "User" if msg["role"] == "user" else "Assistant"
-        prompt += f"{role}: {msg['content']}\n"
-        
-   response = await asyncio.to_thread(
-        gemini_model.generate_content,
-        prompt
-    )
+        prompt = SYSTEM_PROMPT + "\n\n"
 
-    reply = response.text if hasattr(response, "text") else "Reply generate nahi hua."
+        for msg in history:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            prompt += f"{role}: {msg['content']}\n"
 
-    if reply:
-        history.append({"role": "assistant", "content": reply})
-        await update.message.reply_text(reply)
-except Exception as e:
+        response = await asyncio.to_thread(
+            gemini_model.generate_content,
+            prompt
+        )
+
+        reply = response.text if hasattr(response, "text") else "Reply generate nahi hua."
+
+        if reply:
+            history.append({"role": "assistant", "content": reply})
+            await update.message.reply_text(reply)
+
+    except Exception as e:
         logger.error(f"AI error: {e}")
-        await update.message.reply_text("Thodi si problem aa gayi, ek second ruko! 😬",
-                                        **_reply(update.message.message_id))
-
+        await update.message.reply_text(
+            "Thodi si problem aa gayi, ek second ruko! 😬",
+            **_reply(update.message.message_id)
+        )
 
 # ── Startup & main ─────────────────────────────────────────────────────────────
 
