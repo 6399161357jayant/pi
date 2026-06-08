@@ -1080,7 +1080,7 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     text = (update.message.text or "").strip()
     if not text:
         return
-    if not openai_client:
+   if not gemini_model:
         await update.message.reply_text("Abhi AI chat available nahi hai! 😅", **_reply(update.message.message_id))
         return
     uid = update.effective_user.id
@@ -1088,18 +1088,20 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     history.append({"role": "user", "content": text})
     if len(history) > MAX_HISTORY:
         del history[:len(history) - MAX_HISTORY]
-    try:
-        await update.effective_chat.send_action("typing")
-       prompt = SYSTEM_PROMPT + "\n\n"
+        
+try:
+    await update.effective_chat.send_action("typing")
 
-for msg in history:
-    role = "User" if msg["role"] == "user" else "Assistant"
-    prompt += f"{role}: {msg['content']}\n"
+    prompt = SYSTEM_PROMPT + "\n\n"
 
-response = await asyncio.to_thread(
-    gemini_model.generate_content,
-    prompt
-)
+    for msg in history:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        prompt += f"{role}: {msg['content']}\n"
+        
+   response = await asyncio.to_thread(
+        gemini_model.generate_content,
+        prompt
+    )
 
 reply = response.text if hasattr(response, "text") else "Reply generate nahi hua."
         if reply:
