@@ -169,7 +169,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             return
     caption = f"Hey {u.first_name}!\nI'm Nami 🍊\nEnjoy fresh content, new games, and ongoing feature enhancements"
     kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("L ɪ ɢ ʜ ᴛ ✦", callback_data="show_owners")],
+        [InlineKeyboardButton("owners", callback_data="show_owners")],
         [InlineKeyboardButton("🌊 Group", url=GROUP_LINK)],
         [InlineKeyboardButton("➕ Add me to your group", url=f"https://t.me/{BOT_USERNAME}?startgroup=true")],
         [InlineKeyboardButton("⚔️ Select Job", callback_data="select_job")],
@@ -198,7 +198,7 @@ async def callback_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     if data == "show_owners":
         kb = InlineKeyboardMarkup([[
-            InlineKeyboardButton("𝑨𝒖𝒓𝒂 ✘", url="https://t.me/light_speedi"),
+            InlineKeyboardButton("P ʏ R ᴏ x ✘", url="https://t.me/pyrox_speedy"),
             InlineKeyboardButton("L ɪ ɢ ʜ ᴛ", url="https://t.me/light_speedy"),
         ], [InlineKeyboardButton("◀ Back", callback_data="back_start")]])
         await q.edit_message_reply_markup(kb); await q.answer()
@@ -311,10 +311,9 @@ async def cmd_bal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     best_item = await db.get_most_expensive_item(target["telegram_id"])
     job = "⚔️ Bounty Hunter" if target.get("job") == "bounty_hunter" else "🏴‍☠️ Pirate" if target.get("job") == "pirate" else "None"
     premium = db.is_premium_active(target)
-    prefix = "💓 " if premium else "👤 "
-    badge = " ⭐" if premium else ""
+    p = prefix(user, html=True)
     text = (
-        f"{prefix}*Name:* {target['first_name']}{tag}{badge}\n"
+        f"{p}*Name:* {target['first_name']}\n"
         f"💰 *Balance:* ${target['balance']:,}\n"
         f"🏆 *Global Rank:* #{rank}\n"
         f"❤️ *Job:* {job}\n"
@@ -734,7 +733,7 @@ async def cmd_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_setemoji(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
-    register_user(update)
+      register_user(update)
 
     u = update.effective_user
 
@@ -799,7 +798,7 @@ async def cmd_setemoji(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         )
 
         await update.message.reply_text(
-            f"✅ Your custom emoji is now this Telegram Premium emoji! "
+            f"✅ Your prefix is now this Telegram Premium emoji! "
             f"{preview}\n\n"
             f"<i>Others will see your animated emoji in /bal! ✨</i>",
             parse_mode=ParseMode.HTML
@@ -831,9 +830,8 @@ async def cmd_setemoji(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     )
 
     await update.message.reply_text(
-        f"✅ Your emoji is now: {normal_emoji}"
+        f"✅ Your prefix emoji is now: {normal_emoji}"
     )
-
 
 
 # ── Owner-only commands ────────────────────────────────────────────────────────
