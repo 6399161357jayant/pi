@@ -21,12 +21,17 @@ logger = logging.getLogger(__name__)
 
 # ── Try to load OpenAI (optional) ──────────────────────────────────────────────
 try:
-    from openai import AsyncOpenAI
-    _openai_key = os.environ.get("OPENAI_API_KEY", "")
-    openai_client = AsyncOpenAI(api_key=_openai_key) if _openai_key else None
-except ImportError:
-    openai_client = None
+    import google.generativeai as genai
 
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel("gemini-2.5-flash")
+    else:
+        gemini_model = None
+
+except Exception:
+    gemini_model = None
 # ── Constants ──────────────────────────────────────────────────────────────────
 OWNER_USERNAMES = ["light_speedy", "light_speedi"]
 BOT_USERNAME = "nami_ibot"
@@ -1085,12 +1090,18 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         del history[:len(history) - MAX_HISTORY]
     try:
         await update.effective_chat.send_action("typing")
-        resp = await openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_completion_tokens=400,
-            messages=[{"role": "system", "content": SYSTEM_PROMPT}] + history,
-        )
-        reply = resp.choices[0].message.content or ""
+       prompt = SYSTEM_PROMPT + "\n\n"
+
+for msg in history:
+    role = "User" if msg["role"] == "user" else "Assistant"
+    prompt += f"{role}: {msg['content']}\n"
+
+response = await asyncio.to_thread(
+    gemini_model.generate_content,
+    prompt
+)
+
+reply = response.text if hasattr(response, "text") else "Reply generate nahi hua."
         if reply:
             history.append({"role": "assistant", "content": reply})
             await update.message.reply_text(reply, **_reply(update.message.message_id))
