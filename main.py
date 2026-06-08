@@ -1103,11 +1103,12 @@ try:
         prompt
     )
 
-reply = response.text if hasattr(response, "text") else "Reply generate nahi hua."
-        if reply:
-            history.append({"role": "assistant", "content": reply})
-            await update.message.reply_text(reply, **_reply(update.message.message_id))
-    except Exception as e:
+    reply = response.text if hasattr(response, "text") else "Reply generate nahi hua."
+
+    if reply:
+        history.append({"role": "assistant", "content": reply})
+        await update.message.reply_text(reply)
+except Exception as e:
         logger.error(f"AI error: {e}")
         await update.message.reply_text("Thodi si problem aa gayi, ek second ruko! 😬",
                                         **_reply(update.message.message_id))
