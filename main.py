@@ -311,9 +311,9 @@ async def cmd_bal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     best_item = await db.get_most_expensive_item(target["telegram_id"])
     job = "⚔️ Bounty Hunter" if target.get("job") == "bounty_hunter" else "🏴‍☠️ Pirate" if target.get("job") == "pirate" else "None"
     premium = db.is_premium_active(target)
-    p = prefix(user, html=True)
+     prefix = "💓 " if premium else "👤 "
     text = (
-        f"{p}*Name:* {target['first_name']}\n"
+        f"{prefix}*Name:* {target['first_name']}\n"
         f"💰 *Balance:* ${target['balance']:,}\n"
         f"🏆 *Global Rank:* #{rank}\n"
         f"❤️ *Job:* {job}\n"
