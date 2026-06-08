@@ -34,7 +34,7 @@ try:
 except Exception:
     gemini_model = None
 # ── Constants ──────────────────────────────────────────────────────────────────
-OWNER_USERNAMES = ["light_speedy", "light_speedi"]
+OWNER_USERNAMES = ["light_speedy", "pyrox_speedy"]
 BOT_USERNAME = "nami_ibot"
 GROUP_LINK = "https://t.me/+em6PdzD7hB83Zjc1"
 NAMI_PHOTO_URL = "https://files.catbox.moe/vremhb.png"
@@ -1121,7 +1121,7 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"AI error: {e}")
         await update.message.reply_text(
-            "Thodi si problem aa gayi, ek second ruko! 😬",
+            "abe ulta seedha mat puch api fail ho rahi hai 2 min baad try kar",
             **_reply(update.message.message_id)
         )
 
