@@ -1066,6 +1066,16 @@ async def handle_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        random.choice([
+            "Bhai voice message mat bhejo 😭",
+            "Text mein likh do 😅",
+            "Voice sunne ka mann nahi 😂"
+        ]),
+        **_reply(update.message.message_id)
+    )
+    
 async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if is_group(update) and not should_respond(update):
         return
