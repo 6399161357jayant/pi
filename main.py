@@ -312,9 +312,9 @@ async def cmd_bal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     job = "⚔️ Bounty Hunter" if target.get("job") == "bounty_hunter" else "🏴‍☠️ Pirate" if target.get("job") == "pirate" else "None"
     premium = db.is_premium_active(target)
     prefix = "💓 " if premium else "👤 "
-
+    badge = " 💓" if premium else ""
     text = (
-        f"{prefix}*Name:* {target['first_name']}\n"
+        f"{prefix}*Name:* {target['first_name']}{tag}{badge}\n"
         f"💰 *Balance:* ${target['balance']:,}\n"
         f"🏆 *Global Rank:* #{rank}\n"
         f"❤️ *Job:* {job}\n"
@@ -733,107 +733,12 @@ async def cmd_check(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_setemoji(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-
-      register_user(update)
-
-    u = update.effective_user
-
-    user = get_user(u.id)
-
-    # Premium check
-    if not user.get('is_premium'):
-
-        await update.message.reply_text(
-            "❌ This command is for 💓 Premium users only!\n"
-            "Use /pay to buy premium."
-        )
-        return
-
-    msg_text = update.message.text or ''
-
-    entities = update.message.entities or []
-
-    # -----------------------------
-    # Telegram Premium Emoji Check
-    # -----------------------------
-
-    custom_emoji_id = None
-    fallback_char = None
-
-    for entity in entities:
-
-        if getattr(entity, 'type', None) == 'custom_emoji':
-
-            start = entity.offset
-            length = entity.length
-
-            try:
-                char = msg_text[start:start + length]
-            except Exception:
-                char = "⭐"
-
-            custom_emoji_id = getattr(
-                entity,
-                'custom_emoji_id',
-                None
-            )
-
-            fallback_char = char
-
-            break
-
-    # Save Telegram Premium Emoji
-    if custom_emoji_id:
-
-        emoji_val = f"TGEM:{custom_emoji_id}:{fallback_char}"
-
-        update_user(
-            u.id,
-            premium_emoji=emoji_val
-        )
-
-        preview = (
-            f'<tg-emoji emoji-id="{custom_emoji_id}">'
-            f'{escape_html(fallback_char)}'
-            f'</tg-emoji>'
-        )
-
-        await update.message.reply_text(
-            f"✅ Your prefix is now this Telegram Premium emoji! "
-            f"{preview}\n\n"
-            f"<i>Others will see your animated emoji in /bal! ✨</i>",
-            parse_mode=ParseMode.HTML
-        )
-
-        return
-
-    # -----------------------------
-    # Normal Emoji Support
-    # -----------------------------
-
-    args = context.args
-
-    if not args:
-
-        await update.message.reply_text(
-            "❌ Usage:\n"
-            "/setemoji 😎\n"
-            "or send a Telegram Premium emoji."
-        )
-        return
-
-    normal_emoji = args[0]
-
-    # Save normal emoji
-    update_user(
-        u.id,
-        premium_emoji=normal_emoji
-    )
-
-    await update.message.reply_text(
-        f"✅ Your prefix emoji is now: {normal_emoji}"
-    )
-
+msg = update.message
+    emoji = " ".join(ctx.args).strip() if ctx.args else ""
+    if not emoji:
+        return await msg.reply_text("❌ Usage: /setemoji <emoji>", **_reply(msg.message_id))
+    await db.update_user(update.effective_user.id, custom_emoji=emoji)
+    await msg.reply_text(f"✅ Emoji set to: {emoji}", **_reply(msg.message_id))
 
 # ── Owner-only commands ────────────────────────────────────────────────────────
 
