@@ -42,9 +42,9 @@ NAMI_PHOTO_URL = "https://files.catbox.moe/vremhb.png"
 
 ITEMS = db.ITEMS
 
-COUPLE_IMAGE = "https://files.catbox.moe/rnq2rh.jpg"
+COUPLES_IMAGE = "https://files.catbox.moe/rnq2rh.jpg"
 
-daily_couple = {
+daily_couples = {
     "date": None,
     "user1": None,
     "user2": None,
@@ -312,8 +312,8 @@ async def cmd_leavejob(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                                     parse_mode=ParseMode.MARKDOWN, **_reply(update.message.message_id))
 
 
-async def cmd_couple(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    global daily_couple
+async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    global daily_couples
 
     chat = update.effective_chat
 
@@ -326,8 +326,8 @@ async def cmd_couple(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     # Agar aaj ka couple already selected hai
     if daily_couple["date"] == today:
-        user1 = daily_couple["user1"]
-        user2 = daily_couple["user2"]
+        user1 = daily_couples["user1"]
+        user2 = daily_couples["user2"]
 
     else:
         admins = []
@@ -341,12 +341,12 @@ async def cmd_couple(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
             if len(members) < 2:
                 return await update.message.reply_text(
-                    "❌ Couple select karne ke liye kam se kam 2 members chahiye."
+                    "❌ Couples select karne ke liye kam se kam 2 members chahiye."
                 )
 
             user1, user2 = random.sample(members, 2)
 
-            daily_couple = {
+            daily_couples = {
                 "date": today,
                 "user1": user1,
                 "user2": user2,
@@ -358,7 +358,7 @@ async def cmd_couple(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             )
 
     caption = (
-        "❤️ Tᴏᴅᴀʏꜱ Cᴜᴛᴇ Cᴏᴜᴘʟᴇ ❤️\n\n"
+        "❤️ Tᴏᴅᴀʏꜱ Cᴜᴛᴇ Cᴏᴜᴘʟᴇs ❤️\n\n"
         f'<a href="tg://user?id={user1.id}">{user1.first_name}</a> 💞 '
         f'<a href="tg://user?id={user2.id}">{user2.first_name}</a>\n\n'
         "Lᴏᴠᴇ Iꜱ Iɴ Tʜᴇ Aɪʀ ❤️\n\n"
@@ -366,7 +366,7 @@ async def cmd_couple(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     )
 
     await update.message.reply_photo(
-        photo=COUPLE_IMAGE,
+        photo=COUPLES_IMAGE,
         caption=caption,
         parse_mode="HTML",
     )
@@ -1257,7 +1257,7 @@ def main():
         ("daily",                cmd_daily),
         ("select",               cmd_select),
         ("leavejob",             cmd_leavejob),
-        ("couple",               cmd_couple),
+        ("couples",              cmd_couples),
         ("newship",              cmd_newship),
         ("joinship",             cmd_joinship),
         ("leaveship",            cmd_leaveship),
