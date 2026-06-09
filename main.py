@@ -1,4 +1,5 @@
 import os
+import html
 import asyncio
 import logging
 import random
@@ -47,6 +48,13 @@ STICKER_PACK_NAMES = [
     "Clipze",
     "kang_6644255517video_by_Sticker_kang_robot",
     "Abstract_Amethyst_Egret_by_fStikBot",
+]
+SLAP_VIDEOS = [
+    "https://videotourl.com/videos/1781016925975-97f22ba9-5d11-4137-9785-660c5dcfc82b.mp4",
+    "https://videotourl.com/videos/1781016958722-639c02eb-d98a-4036-a22c-891d018f4dc2.mp4",
+    "https://videotourl.com/videos/1781016998177-072e8dec-9797-4e71-be66-326043998d75.mp4",
+    "https://videotourl.com/videos/1781017033246-6d2aa366-7fcf-4df2-8597-0645f73361b5.mp4",
+    "https://videotourl.com/videos/1781017067105-a3b10da5-207d-45dc-8540-8bab3e862eb0.mp4",
 ]
 
 BOUNTY_PER_KILL_NORMAL  = 200
@@ -360,6 +368,32 @@ async def cmd_kill(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"🎯 Bounty +${bounty_gain}"
     )
     await msg.reply_text(text, parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+
+
+async def cmd_slap(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ Kisi user ke message ko reply karke /slap use karo!"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    video = random.choice(SLAP_VIDEOS)
+
+    caption = (
+        f'<a href="tg://user?id={sender.id}">{html.escape(sender.first_name)}</a> '
+        f'slapped '
+        f'<a href="tg://user?id={target.id}">{html.escape(target.first_name)}</a> 👋'
+    )
+
+    await msg.reply_video(
+        video=video,
+        caption=caption,
+        parse_mode="HTML"
+    )
 
 
 async def cmd_rob(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1149,6 +1183,7 @@ def main():
         ("help",                 cmd_help),
         ("bal",                  cmd_bal),
         ("kill",                 cmd_kill),
+        ("slap",                 cmd_slap),
         ("rob",                  cmd_rob),
         ("protect",              cmd_protect),
         ("daily",                cmd_daily),
