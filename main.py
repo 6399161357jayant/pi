@@ -64,6 +64,13 @@ SLAP_VIDEOS = [
     "https://videotourl.com/videos/1781017033246-6d2aa366-7fcf-4df2-8597-0645f73361b5.mp4",
     "https://videotourl.com/videos/1781017067105-a3b10da5-207d-45dc-8540-8bab3e862eb0.mp4",
 ]
+BITE_VIDEOS = [
+    "https://videotourl.com/videos/1781017148105-4a2ddf41-3222-4e7b-96f7-ecdd87e8be55.mp4",
+    "https://videotourl.com/videos/1781017178381-34b10282-21f7-45e7-90ad-3f00fbbd01af.mp4",
+    "https://videotourl.com/videos/1781017204149-d746033e-cac8-4b68-a733-7f073a4b9967.mp4",
+    "https://videotourl.com/videos/1781017229682-74c74c79-c656-4cf4-ae9b-9d4089f334de.mp4",
+    "https://videotourl.com/videos/1781017263500-e2af2ea1-6afc-44e3-83c1-9e32ffd8283d.mp4",
+]
 
 BOUNTY_PER_KILL_NORMAL  = 200
 BOUNTY_PER_KILL_PREMIUM = 400
@@ -310,6 +317,32 @@ async def cmd_leavejob(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await db.update_user(u.id, job=None)
     await update.message.reply_text(f"✅ Aapne *{old}* job leave kar di! /select se naya job chuno.",
                                     parse_mode=ParseMode.MARKDOWN, **_reply(update.message.message_id))
+
+
+async def cmd_bite(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ reply to someone"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    video = random.choice(BITE_VIDEOS)
+
+    caption = (
+        f'<a href="tg://user?id={sender.id}">{sender.first_name}</a> '
+        f'Gᴀᴠᴇ A Nᴏᴛᴛʏ Bɪᴛᴇ ᴛᴏ '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a> 😁'
+    )
+
+    await msg.reply_video(
+        video=video,
+        caption=caption,
+        parse_mode="HTML"
+    )
 
 
 async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1257,6 +1290,7 @@ def main():
         ("daily",                cmd_daily),
         ("select",               cmd_select),
         ("leavejob",             cmd_leavejob),
+        ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
         ("newship",              cmd_newship),
         ("joinship",             cmd_joinship),
