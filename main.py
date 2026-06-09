@@ -3,7 +3,7 @@ import html
 import asyncio
 import logging
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from collections import defaultdict
 
 from dotenv import load_dotenv
@@ -41,6 +41,14 @@ GROUP_LINK = "https://t.me/+em6PdzD7hB83Zjc1"
 NAMI_PHOTO_URL = "https://files.catbox.moe/vremhb.png"
 
 ITEMS = db.ITEMS
+
+COUPLE_IMAGE = "https://files.catbox.moe/rnq2rh.jpg"
+
+daily_couple = {
+    "date": None,
+    "user1": None,
+    "user2": None,
+}
 
 STICKER_PACK_NAMES = [
     "catsunicmass",
@@ -302,6 +310,66 @@ async def cmd_leavejob(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await db.update_user(u.id, job=None)
     await update.message.reply_text(f"✅ Aapne *{old}* job leave kar di! /select se naya job chuno.",
                                     parse_mode=ParseMode.MARKDOWN, **_reply(update.message.message_id))
+
+
+async def cmd_couple(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    global daily_couple
+
+    chat = update.effective_chat
+
+    if chat.type not in ("group", "supergroup"):
+        return await update.message.reply_text(
+            "❌ Yᴏᴜ Cᴀɴ Uꜱᴇ Tʜɪꜱ Cᴏᴍᴍᴀɴᴅ Iɴ Gʀᴏᴜᴘꜱ Oɴʟʏ."
+        )
+
+    today = str(date.today())
+
+    # Agar aaj ka couple already selected hai
+    if daily_couple["date"] == today:
+        user1 = daily_couple["user1"]
+        user2 = daily_couple["user2"]
+
+    else:
+        admins = []
+        members = []
+
+        try:
+            for member in await chat.get_administrators():
+                admins.append(member.user)
+
+            members = admins.copy()
+
+            if len(members) < 2:
+                return await update.message.reply_text(
+                    "❌ Couple select karne ke liye kam se kam 2 members chahiye."
+                )
+
+            user1, user2 = random.sample(members, 2)
+
+            daily_couple = {
+                "date": today,
+                "user1": user1,
+                "user2": user2,
+            }
+
+        except Exception:
+            return await update.message.reply_text(
+                "❌ Members fetch nahi kar paya."
+            )
+
+    caption = (
+        "❤️ Tᴏᴅᴀʏꜱ Cᴜᴛᴇ Cᴏᴜᴘʟᴇ ❤️\n\n"
+        f'<a href="tg://user?id={user1.id}">{user1.first_name}</a> 💞 '
+        f'<a href="tg://user?id={user2.id}">{user2.first_name}</a>\n\n'
+        "Lᴏᴠᴇ Iꜱ Iɴ Tʜᴇ Aɪʀ ❤️\n\n"
+        "~ Fʀᴏᴍ Nami Wɪᴛʜ Lᴏᴠᴇ 💋"
+    )
+
+    await update.message.reply_photo(
+        photo=COUPLE_IMAGE,
+        caption=caption,
+        parse_mode="HTML",
+    )
 
 
 async def cmd_bal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1189,6 +1257,7 @@ def main():
         ("daily",                cmd_daily),
         ("select",               cmd_select),
         ("leavejob",             cmd_leavejob),
+        ("couple",               cmd_couple),
         ("newship",              cmd_newship),
         ("joinship",             cmd_joinship),
         ("leaveship",            cmd_leaveship),
