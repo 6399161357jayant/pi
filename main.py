@@ -75,6 +75,10 @@ PUNCH_VIDEOS = [
     "https://videotourl.com/videos/1781017499782-96c6a2c7-c706-44e0-97d1-6a439d3a0280.mp4",
     "https://files.catbox.moe/yzqsz6.mp4",
 ]
+MURDER_VIDEOS = [
+    "https://videotourl.com/videos/1781017580213-22794bde-1dde-4480-8dfc-158caaf8d3f7.mp4",
+    "https://videotourl.com/videos/1781017616446-825eb58a-433f-4313-b433-c87fe7996f0d.mp4",
+]
 
 BOUNTY_PER_KILL_NORMAL  = 200
 BOUNTY_PER_KILL_PREMIUM = 400
@@ -395,12 +399,38 @@ async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def cmd_murder(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ Rᴇᴘʟʏ Tᴏ Sᴏᴍᴇᴏɴᴇ Tᴏ Mᴜʀᴅᴇʀ Tʜᴇᴍ!"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    video = random.choice(MURDER_VIDEOS)
+
+    caption = (
+        f'<a href="tg://user?id={sender.id}">{sender.first_name}</a> '
+        f'Bʀᴜᴛᴀʟʟʏ Mᴜʀᴅᴇʀᴇᴅ '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a> '
+        f'🔪🩸'
+    )
+
+    await msg.reply_video(
+        video=video,
+        caption=caption,
+        parse_mode="HTML"
+    )
+
 async def cmd_punch(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
 
     if not msg.reply_to_message or not msg.reply_to_message.from_user:
         return await msg.reply_text(
-            "❌ Kisi user ko reply karke /punch use karo!"
+            "❌ Rᴇᴘʟʏ Tᴏ Sᴏᴍᴇᴏɴᴇ"
         )
 
     sender = update.effective_user
@@ -1345,6 +1375,7 @@ def main():
         ("leavejob",             cmd_leavejob),
         ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
+        ("murder",               cmd_murder),
         ("punch",                cmd_punch),
         ("stupid_meter",         cmd_stupid_meter),
         ("newship",              cmd_newship),
