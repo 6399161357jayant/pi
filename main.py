@@ -78,6 +78,23 @@ PUNCH_VIDEOS = [
 MURDER_VIDEOS = [
     "https://videotourl.com/videos/1781017580213-22794bde-1dde-4480-8dfc-158caaf8d3f7.mp4",
     "https://videotourl.com/videos/1781017616446-825eb58a-433f-4313-b433-c87fe7996f0d.mp4",
+    "https://files.catbox.moe/eermdx.mp4",
+    "https://files.catbox.moe/eermdx.mp4",
+]
+KISS_VIDEOS = [
+    "https://files.catbox.moe/2cxtp1.mp4",
+    "https://files.catbox.moe/f9v2tj.mp4",
+    "https://files.catbox.moe/bwscnj.mp4",
+    "https://files.catbox.moe/gj3rnw.mp4",
+    "https://files.catbox.moe/ic45s5.mp4",
+    "https://files.catbox.moe/bu18bb.mp4",
+    "https://files.catbox.moe/hrzxvy.mp4",
+    "https://files.catbox.moe/xht183.mp4",
+    "https://files.catbox.moe/0w48rj.mp4",
+    "https://files.catbox.moe/645hci.mp4",
+    "https://files.catbox.moe/7dv8yo.mp4",
+    "https://files.catbox.moe/p1utsy.mp4",
+    "https://files.catbox.moe/jso4ji.mp4",
 ]
 
 BOUNTY_PER_KILL_NORMAL  = 200
@@ -394,6 +411,33 @@ async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_photo(
         photo=COUPLE_IMAGE,
+        caption=caption,
+        parse_mode="HTML"
+    )
+
+
+async def cmd_kiss(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ Rᴇᴘʟʏ Tᴏ Sᴏᴍᴇᴏɴᴇ!"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    video = random.choice(KISS_VIDEOS)
+
+    caption = (
+        f'<a href="tg://user?id={sender.id}">{sender.first_name}</a> '
+        f'Gᴀᴠᴇ A Sᴡᴇᴇᴛ Kɪꜱꜱ Tᴏ '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a> '
+        f'😘💋'
+    )
+
+    await msg.reply_video(
+        video=video,
         caption=caption,
         parse_mode="HTML"
     )
@@ -1375,6 +1419,7 @@ def main():
         ("leavejob",             cmd_leavejob),
         ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
+        ("kiss",                 cmd_kiss),
         ("murder",               cmd_murder),
         ("punch",                cmd_punch),
         ("stupid_meter",         cmd_stupid_meter),
