@@ -67,6 +67,14 @@ BITE_VIDEOS = [
     "https://videotourl.com/videos/1781017229682-74c74c79-c656-4cf4-ae9b-9d4089f334de.mp4",
     "https://videotourl.com/videos/1781017263500-e2af2ea1-6afc-44e3-83c1-9e32ffd8283d.mp4",
 ]
+PUNCH_VIDEOS = [
+    "https://videotourl.com/videos/1781017327480-4029f9f7-8d32-4323-9323-d4f32d5915ba.mp4",
+    "https://videotourl.com/videos/1781017392424-8b790015-c537-4581-9b59-7580b9efb0cf.mp4",
+    "https://videotourl.com/videos/1781017426808-d1cde6f1-b144-4baf-b7d4-de39b0eff82d.mp4",
+    "https://videotourl.com/videos/1781017474910-fd68bb4a-9b00-40a4-83e1-e12be6f0ac0c.mp4",
+    "https://videotourl.com/videos/1781017499782-96c6a2c7-c706-44e0-97d1-6a439d3a0280.mp4",
+    "https://files.catbox.moe/yzqsz6.mp4",
+]
 
 BOUNTY_PER_KILL_NORMAL  = 200
 BOUNTY_PER_KILL_PREMIUM = 400
@@ -385,6 +393,34 @@ async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         caption=caption,
         parse_mode="HTML"
     )
+
+
+async def cmd_punch(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ Kisi user ko reply karke /punch use karo!"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    video = random.choice(PUNCH_VIDEOS)
+
+    caption = (
+        f'<a href="tg://user?id={sender.id}">{sender.first_name}</a> '
+        f'punched '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a> '
+        f'really hard 👊'
+    )
+
+    await msg.reply_video(
+        video=video,
+        caption=caption,
+        parse_mode="HTML"
+    )
+
 
 async def cmd_stupid_meter(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
@@ -1309,6 +1345,7 @@ def main():
         ("leavejob",             cmd_leavejob),
         ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
+        ("punch",                cmd_punch),
         ("stupid_meter",         cmd_stupid_meter),
         ("newship",              cmd_newship),
         ("joinship",             cmd_joinship),
