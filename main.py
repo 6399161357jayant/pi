@@ -110,6 +110,11 @@ HUG_VIDEOS = [
     "https://files.catbox.moe/v21q2i.mp4",
     "https://files.catbox.moe/3puyit.mp4",
 ]
+CRUSH_VIDEOS = [
+    "https://files.catbox.moe/ieg5nu.mp4",
+    "https://files.catbox.moe/pdprsc.mp4",
+    "https://files.catbox.moe/ts7oj7.mp4",
+]
 
 BOUNTY_PER_KILL_NORMAL  = 200
 BOUNTY_PER_KILL_PREMIUM = 400
@@ -139,15 +144,30 @@ SYSTEM_PROMPT = (
 )
 
 PROMOTE_RIGHTS = {
-    1: dict(can_manage_chat=True, can_change_info=True, can_delete_messages=True,
-            can_manage_video_chats=True, can_invite_users=True, can_pin_messages=True,
-            can_restrict_members=False, can_promote_members=False, can_be_anonymous=False),
-    2: dict(can_manage_chat=True, can_change_info=True, can_delete_messages=True,
-            can_manage_video_chats=True, can_invite_users=True, can_pin_messages=True,
-            can_restrict_members=True, can_promote_members=False, can_be_anonymous=False),
-    3: dict(can_manage_chat=True, can_change_info=True, can_delete_messages=True,
-            can_manage_video_chats=True, can_invite_users=True, can_pin_messages=True,
-            can_restrict_members=True, can_promote_members=True, can_be_anonymous=False),
+    1: dict(
+        can_delete_messages=True,
+        can_invite_users=True,
+        can_pin_messages=True,
+        can_manage_video_chats=True,
+    ),
+
+    2: dict(
+        can_delete_messages=True,
+        can_restrict_members=True,
+        can_invite_users=True,
+        can_pin_messages=True,
+        can_manage_video_chats=True,
+    ),
+
+    3: dict(
+        can_change_info=True,
+        can_delete_messages=True,
+        can_restrict_members=True,
+        can_invite_users=True,
+        can_pin_messages=True,
+        can_manage_video_chats=True,
+        can_promote_members=True,
+    ),
 }
 PROMOTE_MSG = {1: "⭐ Level 1 Promoted", 2: "🌟 Level 2 Promoted", 3: "👑 Full Rights Promoted"}
 
@@ -356,6 +376,35 @@ async def cmd_leavejob(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await db.update_user(u.id, job=None)
     await update.message.reply_text(f"✅ Aapne *{old}* job leave kar di! /select se naya job chuno.",
                                     parse_mode=ParseMode.MARKDOWN, **_reply(update.message.message_id))
+
+
+async def cmd_crush(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ reply to someone to use /crush"
+        )
+
+    checker = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    percent = random.randint(1, 100)
+    video = random.choice(CRUSH_VIDEOS)
+
+    caption = (
+        "💘 Cʀᴜsʜ Dᴇᴛᴇᴄᴛᴏʀ 💘\n\n"
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a>'
+        f"'s Sᴇᴄʀᴇᴛ Cʀᴜsʜ Iꜱ...\n\n"
+        f'❤️ <a href="tg://user?id={checker.id}">{checker.first_name}</a> ❤️\n\n'
+        f'Cʀᴜsʜ Lᴇᴠᴇʟ: {percent}% 🔥'
+    )
+
+    await msg.reply_video(
+        video=video,
+        caption=caption,
+        parse_mode="HTML"
+    )
 
 
 async def cmd_bite(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -1136,23 +1185,120 @@ async def cmd_bounty_gen(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
-    if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
-    if not await _check_group_perm(update, "promote"):
-        return await msg.reply_text("❌ Promote karne ke rights nahi hain!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Jis bande ko promote karna hai uske message ko reply karo!", **_reply(msg.message_id))
-    if not ctx.args or not ctx.args[0].isdigit() or int(ctx.args[0]) not in (1, 2, 3):
-        return await msg.reply_text("❌ Level 1, 2, ya 3 dalo! Example: /promote 2", **_reply(msg.message_id))
-    level = int(ctx.args[0])
-    tu = msg.reply_to_message.from_user
-    try:
-        await update.effective_chat.promote_member(tu.id, **PROMOTE_RIGHTS[level])
-        await msg.reply_text(f"✅ *{tu.first_name}* — {PROMOTE_MSG[level]}",
-                             parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
-    except TelegramError as e:
-        await msg.reply_text(f"❌ Promote nahi ho saka: {e.message}", **_reply(msg.message_id))
+    chat = update.effective_chat
 
+    if not is_group(update):
+        return await msg.reply_text("❌ Group only command.")
+
+    try:
+        bot_member = await chat.get_member(ctx.bot.id)
+
+        if bot_member.status not in ("administrator", "creator"):
+            return await msg.reply_text(
+                "❌ Not enough rights. Mujhe admin banao pehle."
+            )
+
+        if not getattr(bot_member, "can_promote_members", False):
+            return await msg.reply_text(
+                "❌ Not enough rights. Mujhe Promote Members permission chahiye."
+            )
+
+    except Exception:
+        return await msg.reply_text(
+            "❌ Not enough rights."
+        )
+
+    if not await _check_group_perm(update, "promote"):
+        return await msg.reply_text(
+            "❌ Tumhare paas promote karne ke rights nahi hain."
+        )
+
+    target = None
+    level = None
+
+    if msg.reply_to_message:
+        target = msg.reply_to_message.from_user
+
+        if not ctx.args:
+            return await msg.reply_text(
+                "❌ Usage: /promote 1/2/3"
+            )
+
+        if not ctx.args[0].isdigit():
+            return await msg.reply_text(
+                "❌ Level 1, 2 ya 3 dalo."
+            )
+
+        level = int(ctx.args[0])
+
+    else:
+        if len(ctx.args) < 2:
+            return await msg.reply_text(
+                "❌ Usage: /promote @username 1"
+            )
+
+        user_arg = ctx.args[0]
+        level_arg = ctx.args[1]
+
+        if not level_arg.isdigit():
+            return await msg.reply_text(
+                "❌ Level 1, 2 ya 3 dalo."
+            )
+
+        level = int(level_arg)
+
+        try:
+            if user_arg.startswith("@"):
+                admins = await chat.get_administrators()
+
+                for adm in admins:
+                    if (
+                        adm.user.username
+                        and adm.user.username.lower()
+                        == user_arg[1:].lower()
+                    ):
+                        target = adm.user
+                        break
+
+                if not target:
+                    return await msg.reply_text(
+                        "❌ Username group me nahi mila."
+                    )
+
+            else:
+                target = await ctx.bot.get_chat(int(user_arg))
+
+        except Exception:
+            return await msg.reply_text(
+                "❌ User nahi mila."
+            )
+
+    if level not in (1, 2, 3):
+        return await msg.reply_text(
+            "❌ Level sirf 1, 2 ya 3 ho sakta hai."
+        )
+
+    try:
+        admin = await chat.get_member(update.effective_user.id)
+
+        if level == 3 and not getattr(admin, "can_promote_members", False):
+            return await msg.reply_text(
+                "❌ Tum Level 3 promote nahi kar sakte."
+            )
+
+        await chat.promote_member(
+            target.id,
+            **PROMOTE_RIGHTS[level]
+        )
+
+        await msg.reply_text(
+            f"✅ {target.first_name} promoted to Level {level}"
+        )
+
+    except TelegramError as e:
+        await msg.reply_text(
+            f"❌ Promote failed: {e.message}"
+        )
 
 async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
@@ -1485,6 +1631,7 @@ def main():
         ("daily",                cmd_daily),
         ("select",               cmd_select),
         ("leavejob",             cmd_leavejob),
+        ("crush",                cmd_crush),
         ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
         ("hug",                  cmd_hug),
