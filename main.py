@@ -42,13 +42,9 @@ NAMI_PHOTO_URL = "https://files.catbox.moe/vremhb.png"
 
 ITEMS = db.ITEMS
 
-COUPLES_IMAGE = "https://files.catbox.moe/rnq2rh.jpg"
+COUPLE_IMAGE = "https://files.catbox.moe/rnq2rh.jpg"
 
-daily_couples = {
-    "date": None,
-    "user1": None,
-    "user2": None,
-}
+daily_couples = {}
 
 STICKER_PACK_NAMES = [
     "catsunicmass",
@@ -346,64 +342,49 @@ async def cmd_bite(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    global daily_couples
-
-    chat = update.effective_chat
-
-    if chat.type not in ("group", "supergroup"):
-        return await update.message.reply_text(
-            "❌ Yᴏᴜ Cᴀɴ Uꜱᴇ Tʜɪꜱ Cᴏᴍᴍᴀɴᴅ Iɴ Gʀᴏᴜᴘꜱ Oɴʟʏ."
-        )
-
+    chat_id = update.effective_chat.id
     today = str(date.today())
 
-    # Agar aaj ka couple already selected hai
-    if daily_couple["date"] == today:
-        user1 = daily_couples["user1"]
-        user2 = daily_couples["user2"]
+    if chat_id in daily_couples and daily_couples[chat_id]["date"] == today:
+        user1 = daily_couples[chat_id]["user1"]
+        user2 = daily_couples[chat_id]["user2"]
 
     else:
-        admins = []
-        members = []
-
         try:
-            for member in await chat.get_administrators():
-                admins.append(member.user)
+            admins = await update.effective_chat.get_administrators()
+            users = [a.user for a in admins if not a.user.is_bot]
 
-            members = admins.copy()
-
-            if len(members) < 2:
+            if len(users) < 2:
                 return await update.message.reply_text(
-                    "❌ Couples select karne ke liye kam se kam 2 members chahiye."
+                    "Need at least 2 users!"
                 )
 
-            user1, user2 = random.sample(members, 2)
+            user1, user2 = random.sample(users, 2)
 
-            daily_couples = {
+            daily_couples[chat_id] = {
                 "date": today,
                 "user1": user1,
-                "user2": user2,
+                "user2": user2
             }
 
-        except Exception:
+        except Exception as e:
             return await update.message.reply_text(
-                "❌ Members fetch nahi kar paya."
+                f"Error: {e}"
             )
 
     caption = (
-        "❤️ Tᴏᴅᴀʏꜱ Cᴜᴛᴇ Cᴏᴜᴘʟᴇs ❤️\n\n"
-        f'<a href="tg://user?id={user1.id}">{user1.first_name}</a> 💞 '
+        "❤️ Tᴏᴅᴀʏꜱ Cᴜᴛᴇ Cᴏᴜᴘʟᴇ ❤️\n\n"
+        f'<a href="tg://user?id={user1.id}">{user1.first_name}</a> ❤️ '
         f'<a href="tg://user?id={user2.id}">{user2.first_name}</a>\n\n'
         "Lᴏᴠᴇ Iꜱ Iɴ Tʜᴇ Aɪʀ ❤️\n\n"
         "~ Fʀᴏᴍ Nami Wɪᴛʜ Lᴏᴠᴇ 💋"
     )
 
     await update.message.reply_photo(
-        photo=COUPLES_IMAGE,
+        photo=COUPLE_IMAGE,
         caption=caption,
-        parse_mode="HTML",
+        parse_mode="HTML"
     )
-
 
 async def cmd_bal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
