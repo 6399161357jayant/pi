@@ -53,6 +53,16 @@ STICKER_PACK_NAMES = [
     "kang_6644255517video_by_Sticker_kang_robot",
     "Abstract_Amethyst_Egret_by_fStikBot",
 ]
+ACTIVE_USERS = {}
+
+def save_active_user(user):
+    if not user or user.is_bot:
+        return
+
+    ACTIVE_USERS[user.id] = {
+        "id": user.id,
+        "name": user.first_name,
+    }
 SLAP_VIDEOS = [
     "https://videotourl.com/videos/1781016925975-97f22ba9-5d11-4137-9785-660c5dcfc82b.mp4",
     "https://videotourl.com/videos/1781016958722-639c02eb-d98a-4036-a22c-891d018f4dc2.mp4",
@@ -381,6 +391,11 @@ async def cmd_leavejob(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def cmd_crush(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
 
+    save_active_user(update.effective_user)
+
+if update.message.reply_to_message:
+    save_active_user(update.message.reply_to_message.from_user)
+    
     if not msg.reply_to_message or not msg.reply_to_message.from_user:
         return await msg.reply_text(
             "❌ reply to someone to use /crush"
@@ -434,6 +449,12 @@ async def cmd_bite(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    
+    save_active_user(update.effective_user)
+
+if update.message.reply_to_message:
+    save_active_user(update.message.reply_to_message.from_user)
+    
     chat_id = update.effective_chat.id
     today = str(date.today())
 
