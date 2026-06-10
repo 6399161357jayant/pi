@@ -386,6 +386,42 @@ async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML"
     )
 
+async def cmd_stupid_meter(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message:
+        return await msg.reply_text(
+            "❌ Reply to someone and use /stupid_meter"
+        )
+
+    target = msg.reply_to_message.from_user
+    percent = random.randint(1, 100)
+
+    if percent <= 20:
+        status = "🧠 Gᴇɴɪᴜs!"
+    elif percent <= 40:
+        status = "😎 Sᴍᴀʀᴛ!"
+    elif percent <= 60:
+        status = "🤪 A Lɪᴛᴛʟᴇ Sᴛᴜᴘɪᴅ!"
+    elif percent <= 80:
+        status = "😵‍💫 Vᴇʀʏ Sᴛᴜᴘɪᴅ!"
+    else:
+        status = "💀 Dᴀɴɢᴇʀᴏᴜꜱʟʏ Sᴛᴜᴘɪᴅ!"
+
+    text = (
+        "🔍 Sᴛᴜᴘɪᴅ Mᴇᴛᴇʀ Sᴄᴀɴɴɪɴɢ…\n\n"
+        f'Rᴇꜱᴜʟᴛ Fᴏʀ '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a>'
+        f': {percent}%\n\n'
+        f"{status}"
+    )
+
+    await msg.reply_text(
+        text,
+        parse_mode="HTML"
+    )
+
+
 async def cmd_bal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if msg.reply_to_message and msg.reply_to_message.from_user:
@@ -1273,6 +1309,7 @@ def main():
         ("leavejob",             cmd_leavejob),
         ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
+        ("stupid_meter",         cmd_stupid_meter),
         ("newship",              cmd_newship),
         ("joinship",             cmd_joinship),
         ("leaveship",            cmd_leaveship),
