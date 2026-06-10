@@ -96,6 +96,20 @@ KISS_VIDEOS = [
     "https://files.catbox.moe/p1utsy.mp4",
     "https://files.catbox.moe/jso4ji.mp4",
 ]
+LOVE_VIDEOS = [
+    "https://files.catbox.moe/thhcr5.mp4",
+    "https://files.catbox.moe/n225q5.mp4",
+    "https://files.catbox.moe/hvs6dn.mp4",
+    "https://files.catbox.moe/m65b1u.mp4",
+    "https://files.catbox.moe/ktiwzg.mp4",
+    "https://files.catbox.moe/4w8r0l.mp4",
+]
+HUG_VIDEOS = [
+    "https://files.catbox.moe/p52i0o.mp4",
+    "https://files.catbox.moe/cdkl1x.mp4",
+    "https://files.catbox.moe/v21q2i.mp4",
+    "https://files.catbox.moe/3puyit.mp4",
+]
 
 BOUNTY_PER_KILL_NORMAL  = 200
 BOUNTY_PER_KILL_PREMIUM = 400
@@ -411,6 +425,60 @@ async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_photo(
         photo=COUPLE_IMAGE,
+        caption=caption,
+        parse_mode="HTML"
+    )
+
+
+async def cmd_hug(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ reply to someone"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    video = random.choice(HUG_VIDEOS)
+
+    caption = (
+        f'<a href="tg://user?id={sender.id}">{sender.first_name}</a> '
+        f'Sᴇɴᴛ A Hᴜɢ Tᴏ '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a> 💕'
+    )
+
+    await msg.reply_video(
+        video=video,
+        caption=caption,
+        parse_mode="HTML"
+    )
+
+
+async def cmd_love(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ reply to someone to use /love"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    percent = random.randint(1, 100)
+    video = random.choice(LOVE_VIDEOS)
+
+    caption = (
+        "❤️ Lᴏᴠᴇ Mᴇᴛᴇʀ Rᴇᴘᴏʀᴛ ❤️\n\n"
+        f'<a href="tg://user?id={sender.id}">{sender.first_name}</a> ❤️ '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a>\n\n'
+        f'Lᴏᴠᴇ Cᴏᴍᴘᴀᴛɪʙɪʟɪᴛʏ: {percent}% ❤️'
+    )
+
+    await msg.reply_video(
+        video=video,
         caption=caption,
         parse_mode="HTML"
     )
@@ -1419,6 +1487,8 @@ def main():
         ("leavejob",             cmd_leavejob),
         ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
+        ("hug",                  cmd_hug),
+        ("love",                 cmd_love),
         ("kiss",                 cmd_kiss),
         ("murder",               cmd_murder),
         ("punch",                cmd_punch),
