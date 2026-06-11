@@ -393,9 +393,9 @@ async def cmd_crush(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     save_active_user(update.effective_user)
 
-if update.message.reply_to_message:
-    save_active_user(update.message.reply_to_message.from_user)
-    
+    if update.message.reply_to_message:
+        save_active_user(update.message.reply_to_message.from_user)
+
     if not msg.reply_to_message or not msg.reply_to_message.from_user:
         return await msg.reply_text(
             "❌ reply to someone to use /crush"
