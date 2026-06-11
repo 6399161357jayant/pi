@@ -2594,6 +2594,33 @@ async def handle_text(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             **_reply(update.message.message_id)
         )
 
+
+async def welcome_new_members(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+
+    if not msg or not msg.new_chat_members:
+        return
+
+    for user in msg.new_chat_members:
+        if user.is_bot:
+            continue
+
+        mention = f'<a href="tg://user?id={user.id}">{user.first_name}</a>'
+
+        text = (
+            f"🎉 Wᴇʟᴄᴏᴍᴇ {mention} 💙\n\n"
+            f"✨ Wᴇ'ʀᴇ Gʟᴀᴅ Tᴏ Hᴀᴠᴇ Yᴏᴜ Hᴇʀᴇ!\n"
+            f"💬 Mᴀᴋᴇ Yᴏᴜʀsᴇʟғ Aᴛ Hᴏᴍᴇ.\n"
+            f"🎊 Eɴᴊᴏʏ Tʜᴇ Gʀᴏᴜᴘ Aɴᴅ Hᴀᴠᴇ Fᴜɴ!\n\n"
+            f"❤️ Hᴀᴠᴇ A Gʀᴇᴀᴛ Tɪᴍᴇ!"
+        )
+
+        await msg.reply_text(
+            text,
+            parse_mode="HTML"
+        )
+
+
 # ── Startup & main ─────────────────────────────────────────────────────────────
 
 async def post_init(app: Application):
@@ -2679,6 +2706,14 @@ def main():
         app.add_handler(CommandHandler(cmd, fn))
 
     app.add_handler(CallbackQueryHandler(callback_handler))
+
+    app.add_handler(
+        MessageHandler(
+            filters.StatusUpdate.NEW_CHAT_MEMBERS,
+            welcome_new_members
+        )
+    )
+
     app.add_handler(MessageHandler(filters.Sticker.ALL, handle_sticker))
     app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app.add_handler(MessageHandler(filters.VOICE, handle_voice))
