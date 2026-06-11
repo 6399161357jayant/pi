@@ -1358,24 +1358,115 @@ async def cmd_promote(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_demote(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
-    if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
-    if not await _check_group_perm(update, "promote"):
-        return await msg.reply_text("❌ Demote karne ke rights nahi hain!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Reply karo jise demote karna hai!", **_reply(msg.message_id))
-    tu = msg.reply_to_message.from_user
-    try:
-        await update.effective_chat.promote_member(
-            tu.id,
-            can_manage_chat=False, can_change_info=False, can_delete_messages=False,
-            can_manage_video_chats=False, can_invite_users=False, can_pin_messages=False,
-            can_restrict_members=False, can_promote_members=False, can_be_anonymous=False,
-        )
-        await msg.reply_text(f"⬇️ *{tu.first_name}* demote ho gaya!", parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
-    except TelegramError as e:
-        await msg.reply_text(f"❌ Demote nahi ho saka: {e.message}", **_reply(msg.message_id))
+    chat = update.effective_chat
 
+    if not is_group(update):
+        return await msg.reply_text("❌ Group only command.")
+
+    try:
+        bot_member = await chat.get_member(ctx.bot.id)
+
+        if bot_member.status not in ("administrator", "creator"):
+            return await msg.reply_text(
+                "❌ Not enough rights. Make me an admin first."
+            )
+
+        if not getattr(bot_member, "can_promote_members", False):
+            return await msg.reply_text(
+                "❌ Not enough rights. I need the Promote Members permission."
+            )
+
+    except Exception:
+        return await msg.reply_text(
+            "❌ Not enough rights."
+        )
+
+    if not await _check_group_perm(update, "promote"):
+        return await msg.reply_text(
+            "❌ You don't have permission to manage administrators."
+        )
+
+    target_id = None
+    target_name = "User"
+
+    try:
+        # Reply method
+        if msg.reply_to_message:
+            target = msg.reply_to_message.from_user
+            target_id = target.id
+            target_name = target.first_name
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                admins = await chat.get_administrators()
+
+                for adm in admins:
+                    if (
+                        adm.user.username
+                        and adm.user.username.lower()
+                        == user_arg[1:].lower()
+                    ):
+                        target_id = adm.user.id
+                        target_name = adm.user.first_name
+                        break
+
+                if not target_id:
+                    return await msg.reply_text(
+                        "❌ Admin with that username was not found."
+                    )
+
+            else:
+                target_id = int(user_arg)
+
+                try:
+                    member = await chat.get_member(target_id)
+                    target_name = member.user.first_name
+                except:
+                    pass
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/demote (reply to an admin)\n"
+                "/demote @username\n"
+                "/demote userid"
+            )
+
+        member = await chat.get_member(target_id)
+
+        if member.status == "creator":
+            return await msg.reply_text(
+                "❌ I cannot demote the group owner."
+            )
+
+        await chat.promote_member(
+            user_id=target_id,
+            can_change_info=False,
+            can_post_messages=False,
+            can_edit_messages=False,
+            can_delete_messages=False,
+            can_invite_users=False,
+            can_restrict_members=False,
+            can_pin_messages=False,
+            can_promote_members=False,
+            can_manage_video_chats=False,
+            can_manage_chat=False,
+            can_manage_topics=False,
+        )
+
+        await msg.reply_text(
+            f'✅ <a href="tg://user?id={target_id}">{target_name}</a> has been demoted and is now a regular member.',
+            parse_mode="HTML"
+        )
+
+    except TelegramError as e:
+        await msg.reply_text(
+            f"❌ Demotion failed: {e.message}"
+        )
+        
 
 async def cmd_pin(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
