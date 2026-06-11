@@ -35,9 +35,9 @@ try:
 except Exception:
     gemini_model = None
 # ── Constants ──────────────────────────────────────────────────────────────────
-OWNER_USERNAMES = ["light_speedy", "pyrox_speedy"]
+OWNER_USERNAMES = ["light_speedy", "pyrox_speedy", "proxy_speedi"]
 BOT_USERNAME = "nami_ibot"
-GROUP_LINK = "https://t.me/+em6PdzD7hB83Zjc1"
+GROUP_LINK = "https://t.me/midnight_chatclub"
 NAMI_PHOTO_URL = "https://files.catbox.moe/vremhb.png"
 
 ITEMS = db.ITEMS
