@@ -449,12 +449,12 @@ async def cmd_bite(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 
 async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
-    
+
     save_active_user(update.effective_user)
 
-if update.message.reply_to_message:
-    save_active_user(update.message.reply_to_message.from_user)
-    
+    if update.message.reply_to_message:
+        save_active_user(update.message.reply_to_message.from_user)
+
     chat_id = update.effective_chat.id
     today = str(date.today())
 
@@ -471,7 +471,7 @@ if update.message.reply_to_message:
                 return await update.message.reply_text(
                     "Need at least 2 users!"
                 )
-
+                
             user1, user2 = random.sample(users, 2)
 
             daily_couples[chat_id] = {
