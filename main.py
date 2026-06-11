@@ -1179,29 +1179,162 @@ async def cmd_setemoji(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_givepremium(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+
     if not is_owner(update.effective_user.username):
-        return await msg.reply_text("❌ Owner only command!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user or not ctx.args or not ctx.args[0].isdigit():
-        return await msg.reply_text("❌ Usage: /givepremium <days> (reply to user)", **_reply(msg.message_id))
-    days = int(ctx.args[0])
-    tu = msg.reply_to_message.from_user
-    expires = datetime.utcnow() + timedelta(days=days)
-    await db.update_user(tu.id, premium=True, premium_expires=expires)
-    await msg.reply_text(f"✅ *{tu.first_name}* ko {days} day premium diya! (Until {expires.strftime('%Y-%m-%d')})",
-                         parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+        return await msg.reply_text(
+            "❌ Owner only command!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+    days = None
+
+    try:
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+
+            target_user = msg.reply_to_message.from_user
+
+            if not ctx.args or not ctx.args[0].isdigit():
+                return await msg.reply_text(
+                    "❌ Usage: /givepremium <days>",
+                    **_reply(msg.message_id)
+                )
+
+            days = int(ctx.args[0])
+
+        # Username / ID method
+        else:
+            if len(ctx.args) < 2:
+                return await msg.reply_text(
+                    "❌ Usage:\n"
+                    "/givepremium @username 30\n"
+                    "/givepremium userid 30",
+                    **_reply(msg.message_id)
+                )
+
+            user_arg = ctx.args[0]
+
+            if not ctx.args[1].isdigit():
+                return await msg.reply_text(
+                    "❌ Days must be a number.",
+                    **_reply(msg.message_id)
+                )
+
+            days = int(ctx.args[1])
+
+            if user_arg.startswith("@"):
+
+                try:
+                    chat_user = await ctx.bot.get_chat(user_arg)
+                    target_user = chat_user
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    user_id = int(user_arg)
+                    chat_user = await ctx.bot.get_chat(user_id)
+                    target_user = chat_user
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        expires = datetime.utcnow() + timedelta(days=days)
+
+        await db.update_user(
+            target_user.id,
+            premium=True,
+            premium_expires=expires
+        )
+
+        await msg.reply_text(
+            f'✅ <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> '
+            f'has been granted Premium for {days} day(s).\n'
+            f'Expires: {expires.strftime("%Y-%m-%d")}',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
+    except Exception as e:
+        await msg.reply_text(
+            f"❌ Failed to grant premium.\n{e}",
+            **_reply(msg.message_id)
+        )
 
 
 async def cmd_cancelpremium(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
-    if not is_owner(update.effective_user.username):
-        return await msg.reply_text("❌ Owner only command!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Reply karo jiska premium cancel karna hai!", **_reply(msg.message_id))
-    tu = msg.reply_to_message.from_user
-    await db.update_user(tu.id, premium=False, premium_expires=None)
-    await msg.reply_text(f"✅ *{tu.first_name}* ka premium cancel kiya gaya.",
-                         parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
 
+    if not is_owner(update.effective_user.username):
+        return await msg.reply_text(
+            "❌ Owner only command!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+
+    try:
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    user_id = int(user_arg)
+                    target_user = await ctx.bot.get_chat(user_id)
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/cancelpremium (reply)\n"
+                "/cancelpremium @username\n"
+                "/cancelpremium userid",
+                **_reply(msg.message_id)
+            )
+
+        await db.update_user(
+            target_user.id,
+            premium=False,
+            premium_expires=None
+        )
+
+        await msg.reply_text(
+            f'✅ <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> '
+            f'premium has been cancelled.',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
+    except Exception as e:
+        await msg.reply_text(
+            f"❌ Failed to cancel premium.\n{e}",
+            **_reply(msg.message_id)
+        )
+        
 
 async def cmd_setbal(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
@@ -1485,119 +1618,833 @@ async def cmd_pin(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_warn(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+    chat = update.effective_chat
+
     if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
     if not await _check_group_perm(update, "restrict"):
-        return await msg.reply_text("❌ Warn karne ke rights nahi hain!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Reply karo jise warn karna hai!", **_reply(msg.message_id))
-    tu = msg.reply_to_message.from_user
-    if is_owner(tu.username):
-        return await msg.reply_text("❌ Owner ko warn nahi kar sakte!", **_reply(msg.message_id))
-    count = await db.add_warn(update.effective_chat.id, tu.id)
-    if count >= 5:
+        return await msg.reply_text(
+            "❌ You don't have permission to warn users!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+
+    try:
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    user_id = int(user_arg)
+                    target_user = await ctx.bot.get_chat(user_id)
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/warn (reply)\n"
+                "/warn @username\n"
+                "/warn userid",
+                **_reply(msg.message_id)
+            )
+
+        if is_owner(target_user.username):
+            return await msg.reply_text(
+                "❌ You cannot warn the bot owner.",
+                **_reply(msg.message_id)
+            )
+
         try:
-            await update.effective_chat.ban_member(tu.id)
-            await msg.reply_text(f"⛔ *{tu.first_name}* ko 5 warns pe BAN kar diya gaya!",
-                                 parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
-        except TelegramError as e:
-            await msg.reply_text(f"⚠️ 5 warns! Ban nahi ho saka: {e.message}", **_reply(msg.message_id))
-        await db.reset_warns(update.effective_chat.id, tu.id)
-    else:
-        await msg.reply_text(f"⚠️ *{tu.first_name}* warned! ({count}/5)\n5 warns pe ban hoga.",
-                             parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+            member = await chat.get_member(target_user.id)
+
+            if member.status == "creator":
+                return await msg.reply_text(
+                    "❌ You cannot warn the group owner.",
+                    **_reply(msg.message_id)
+                )
+
+        except:
+            pass
+
+        count = await db.add_warn(
+            chat.id,
+            target_user.id
+        )
+
+        if count >= 5:
+            try:
+                await chat.ban_member(target_user.id)
+
+                await msg.reply_text(
+                    f'⛔ <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> '
+                    f'has reached 5 warnings and has been banned from the group.',
+                    parse_mode="HTML",
+                    **_reply(msg.message_id)
+                )
+
+            except TelegramError as e:
+                await msg.reply_text(
+                    f"⚠️ User reached 5 warnings, but could not be banned:\n{e.message}",
+                    **_reply(msg.message_id)
+                )
+
+            await db.reset_warns(
+                chat.id,
+                target_user.id
+            )
+
+        else:
+            await msg.reply_text(
+                f'⚠️ <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> '
+                f'has been warned. ({count}/5)\n'
+                f'User will be banned automatically after 5 warnings.',
+                parse_mode="HTML",
+                **_reply(msg.message_id)
+            )
+
+    except Exception as e:
+        await msg.reply_text(
+            f"❌ Warning failed:\n{e}",
+            **_reply(msg.message_id)
+        )
 
 
 async def cmd_unwarn(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+    chat = update.effective_chat
+
     if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
-    if not await _check_group_perm(update, "restrict"):
-        return await msg.reply_text("❌ Unwarn karne ke rights nahi hain!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Reply karo jise unwarn karna hai!", **_reply(msg.message_id))
-    tu = msg.reply_to_message.from_user
-    count = await db.remove_warn(update.effective_chat.id, tu.id)
-    await msg.reply_text(f"✅ *{tu.first_name}* ka ek warn remove kiya! ({count}/5)",
-                         parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    # Allow bot owner even without admin rights
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "restrict")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to remove warnings.",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+
+    try:
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    user_id = int(user_arg)
+                    target_user = await ctx.bot.get_chat(user_id)
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/unwarn (reply)\n"
+                "/unwarn @username\n"
+                "/unwarn userid",
+                **_reply(msg.message_id)
+            )
+
+        count = await db.remove_warn(
+            chat.id,
+            target_user.id
+        )
+
+        await msg.reply_text(
+            f'✅ One warning has been removed from '
+            f'<a href="tg://user?id={target_user.id}">{target_user.first_name}</a>. '
+            f'({count}/5)',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
+    except Exception as e:
+        await msg.reply_text(
+            f"❌ Failed to remove warning:\n{e}",
+            **_reply(msg.message_id)
+        )
 
 
 async def cmd_mute(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+    chat = update.effective_chat
+
     if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
-    if not await _check_group_perm(update, "restrict"):
-        return await msg.reply_text("❌ Mute karne ke rights nahi hain!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Reply karo jise mute karna hai!", **_reply(msg.message_id))
-    tu = msg.reply_to_message.from_user
-    if is_owner(tu.username):
-        return await msg.reply_text("❌ Owner ko mute nahi kar sakte!", **_reply(msg.message_id))
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    # Allow bot owner even without admin rights
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "restrict")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to mute users!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+    duration = None
+
     try:
-        await update.effective_chat.restrict_member(tu.id, ChatPermissions(can_send_messages=False))
-        await msg.reply_text(f"🔇 *{tu.first_name}* mute ho gaya!", parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+            if ctx.args:
+                duration = ctx.args[0].lower()
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if len(ctx.args) >= 2:
+                duration = ctx.args[1].lower()
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    target_user = await ctx.bot.get_chat(int(user_arg))
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/mute (reply)\n"
+                "/mute 10min\n"
+                "/mute 1hr\n"
+                "/mute @username\n"
+                "/mute @username 10min\n"
+                "/mute @username 3hr\n"
+                "/mute userid\n"
+                "/mute userid 15min",
+                **_reply(msg.message_id)
+            )
+
+        if is_owner(target_user.username):
+            return await msg.reply_text(
+                "❌ You cannot mute the bot owner.",
+                **_reply(msg.message_id)
+            )
+
+        try:
+            member = await chat.get_member(target_user.id)
+
+            if member.status == "creator":
+                return await msg.reply_text(
+                    "❌ You cannot mute the group owner.",
+                    **_reply(msg.message_id)
+                )
+
+        except:
+            pass
+
+        permissions = ChatPermissions(
+            can_send_messages=False,
+            can_send_audios=False,
+            can_send_documents=False,
+            can_send_photos=False,
+            can_send_videos=False,
+            can_send_video_notes=False,
+            can_send_voice_notes=False,
+            can_send_polls=False,
+            can_send_other_messages=False,
+            can_add_web_page_previews=False,
+            can_change_info=False,
+            can_invite_users=False,
+            can_pin_messages=False,
+        )
+
+        # Permanent mute
+        if not duration:
+            await chat.restrict_member(
+                target_user.id,
+                permissions
+            )
+
+            return await msg.reply_text(
+                f'🔇 <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> '
+                f'has been muted permanently.',
+                parse_mode="HTML",
+                **_reply(msg.message_id)
+            )
+
+        # Timed mute
+        if duration.endswith("min"):
+            mins = int(duration[:-3])
+            until_date = datetime.utcnow() + timedelta(minutes=mins)
+
+        elif duration.endswith("hr"):
+            hrs = int(duration[:-2])
+            until_date = datetime.utcnow() + timedelta(hours=hrs)
+
+        else:
+            return await msg.reply_text(
+                "❌ Invalid duration.\nExamples: 1min, 10min, 30min, 1hr, 3hr, 12hr",
+                **_reply(msg.message_id)
+            )
+
+        await chat.restrict_member(
+            target_user.id,
+            permissions,
+            until_date=until_date
+        )
+
+        await msg.reply_text(
+            f'🔇 <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> '
+            f'has been muted for {duration}.',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
     except TelegramError as e:
-        await msg.reply_text(f"❌ Mute nahi ho saka: {e.message}", **_reply(msg.message_id))
+        await msg.reply_text(
+            f"❌ Mute failed: {e.message}",
+            **_reply(msg.message_id)
+        )
 
 
 async def cmd_unmute(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+    chat = update.effective_chat
+
     if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
-    if not await _check_group_perm(update, "restrict"):
-        return await msg.reply_text("❌ Unmute karne ke rights nahi hain!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Reply karo jise unmute karna hai!", **_reply(msg.message_id))
-    tu = msg.reply_to_message.from_user
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    # Allow bot owner even without admin rights
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "restrict")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to unmute users!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+
     try:
-        await update.effective_chat.restrict_member(
-            tu.id,
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    target_user = await ctx.bot.get_chat(int(user_arg))
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/unmute (reply)\n"
+                "/unmute @username\n"
+                "/unmute userid",
+                **_reply(msg.message_id)
+            )
+
+        await chat.restrict_member(
+            target_user.id,
             ChatPermissions(
-                can_send_messages=True, can_send_audios=True, can_send_documents=True,
-                can_send_photos=True, can_send_videos=True, can_send_video_notes=True,
-                can_send_voice_notes=True, can_send_polls=True, can_send_other_messages=True,
-                can_add_web_page_previews=True, can_invite_users=True,
+                can_send_messages=True,
+                can_send_audios=True,
+                can_send_documents=True,
+                can_send_photos=True,
+                can_send_videos=True,
+                can_send_video_notes=True,
+                can_send_voice_notes=True,
+                can_send_polls=True,
+                can_send_other_messages=True,
+                can_add_web_page_previews=True,
+                can_invite_users=True,
             ),
         )
-        await msg.reply_text(f"🔊 *{tu.first_name}* unmuted!", parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+
+        await msg.reply_text(
+            f'🔊 <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> has been unmuted.',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
     except TelegramError as e:
-        await msg.reply_text(f"❌ Unmute nahi ho saka: {e.message}", **_reply(msg.message_id))
+        await msg.reply_text(
+            f"❌ Unmute failed: {e.message}",
+            **_reply(msg.message_id)
+        )
 
 
 async def cmd_kick(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+    chat = update.effective_chat
+
     if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
-    if not await _check_group_perm(update, "restrict"):
-        return await msg.reply_text("❌ Kick karne ke rights nahi hain!", **_reply(msg.message_id))
-    if not msg.reply_to_message or not msg.reply_to_message.from_user:
-        return await msg.reply_text("❌ Reply karo jise kick karna hai!", **_reply(msg.message_id))
-    tu = msg.reply_to_message.from_user
-    if is_owner(tu.username):
-        return await msg.reply_text("❌ Owner ko kick nahi kar sakte!", **_reply(msg.message_id))
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    # Allow bot owner even without admin rights
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "restrict")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to kick users!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+
     try:
-        await update.effective_chat.ban_member(tu.id)
-        await update.effective_chat.unban_member(tu.id)
-        await msg.reply_text(f"👟 *{tu.first_name}* kick ho gaya!", parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    target_user = await ctx.bot.get_chat(int(user_arg))
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/kick (reply)\n"
+                "/kick @username\n"
+                "/kick userid",
+                **_reply(msg.message_id)
+            )
+
+        if is_owner(target_user.username):
+            return await msg.reply_text(
+                "❌ You cannot kick the bot owner.",
+                **_reply(msg.message_id)
+            )
+
+        try:
+            member = await chat.get_member(target_user.id)
+
+            if member.status == "creator":
+                return await msg.reply_text(
+                    "❌ You cannot kick the group owner.",
+                    **_reply(msg.message_id)
+                )
+
+        except:
+            pass
+
+        await chat.ban_member(target_user.id)
+        await chat.unban_member(target_user.id)
+
+        await msg.reply_text(
+            f'👢 <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> has been kicked from the group.',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
     except TelegramError as e:
-        await msg.reply_text(f"❌ Kick nahi ho saka: {e.message}", **_reply(msg.message_id))
+        await msg.reply_text(
+            f"❌ Kick failed: {e.message}",
+            **_reply(msg.message_id)
+        )
+
+
+async def cmd_ban(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+    chat = update.effective_chat
+
+    if not is_group(update):
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    # Allow bot owner even without admin rights
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "restrict")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to ban users!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+
+    try:
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+
+            else:
+                try:
+                    target_user = await ctx.bot.get_chat(int(user_arg))
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/ban (reply)\n"
+                "/ban @username\n"
+                "/ban userid",
+                **_reply(msg.message_id)
+            )
+
+        if is_owner(target_user.username):
+            return await msg.reply_text(
+                "❌ You cannot ban the bot owner.",
+                **_reply(msg.message_id)
+            )
+
+        try:
+            member = await chat.get_member(target_user.id)
+
+            if member.status == "creator":
+                return await msg.reply_text(
+                    "❌ You cannot ban the group owner."
+                )
+
+        except:
+            pass
+
+        await chat.ban_member(target_user.id)
+
+        await msg.reply_text(
+            f'⛔ <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> has been banned from the group.',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
+    except TelegramError as e:
+        await msg.reply_text(
+            f"❌ Ban failed: {e.message}",
+            **_reply(msg.message_id)
+        )
+
+
+async def cmd_unban(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+    chat = update.effective_chat
+
+    if not is_group(update):
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "restrict")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to unban users!",
+            **_reply(msg.message_id)
+        )
+
+    target_user = None
+
+    try:
+        # Reply method
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user = msg.reply_to_message.from_user
+
+        # Username / ID method
+        elif ctx.args:
+            user_arg = ctx.args[0]
+
+            if user_arg.startswith("@"):
+                try:
+                    target_user = await ctx.bot.get_chat(user_arg)
+                except:
+                    return await msg.reply_text(
+                        "❌ User not found.",
+                        **_reply(msg.message_id)
+                    )
+            else:
+                try:
+                    target_user = await ctx.bot.get_chat(int(user_arg))
+                except:
+                    return await msg.reply_text(
+                        "❌ Invalid user ID.",
+                        **_reply(msg.message_id)
+                    )
+
+        else:
+            return await msg.reply_text(
+                "❌ Usage:\n"
+                "/unban (reply)\n"
+                "/unban @username\n"
+                "/unban userid",
+                **_reply(msg.message_id)
+            )
+
+        await chat.unban_member(target_user.id)
+
+        await msg.reply_text(
+            f'✅ <a href="tg://user?id={target_user.id}">{target_user.first_name}</a> has been unbanned.',
+            parse_mode="HTML",
+            **_reply(msg.message_id)
+        )
+
+    except TelegramError as e:
+        await msg.reply_text(
+            f"❌ Unban failed: {e.message}",
+            **_reply(msg.message_id)
+        )
+
+
+async def cmd_delete(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+    chat = update.effective_chat
+
+    if not is_group(update):
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    # Admin or Bot Owner
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "delete")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to delete messages!",
+            **_reply(msg.message_id)
+        )
+
+    if not msg.reply_to_message:
+        return await msg.reply_text(
+            "❌ Reply to a message to delete it.",
+            **_reply(msg.message_id)
+        )
+
+    try:
+        # Delete replied message
+        await msg.reply_to_message.delete()
+
+        # Delete command message too
+        await msg.delete()
+
+    except TelegramError as e:
+        await msg.reply_text(
+            f"❌ Delete failed: {e.message}",
+            **_reply(msg.message_id)
+        )
+
+
+async def cmd_demoteall(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+    chat = update.effective_chat
+
+    if not is_group(update):
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    if (
+        not is_owner(update.effective_user.username)
+        and not await _check_group_perm(update, "promote")
+    ):
+        return await msg.reply_text(
+            "❌ You don't have permission to demote admins!",
+            **_reply(msg.message_id)
+        )
+
+    try:
+        admins = await chat.get_administrators()
+
+        demoted = 0
+        failed = 0
+
+        for admin in admins:
+            user = admin.user
+
+            # Skip group owner
+            if admin.status == "creator":
+                continue
+
+            # Skip bot itself
+            if user.id == ctx.bot.id:
+                continue
+
+            try:
+                await chat.promote_member(
+                    user_id=user.id,
+                    can_change_info=False,
+                    can_post_messages=False,
+                    can_edit_messages=False,
+                    can_delete_messages=False,
+                    can_invite_users=False,
+                    can_restrict_members=False,
+                    can_pin_messages=False,
+                    can_promote_members=False,
+                    can_manage_video_chats=False,
+                    can_manage_chat=False,
+                    can_manage_topics=False,
+                )
+
+                demoted += 1
+
+            except:
+                failed += 1
+
+        await msg.reply_text(
+            f"✅ Demoted {demoted} admin(s).\n"
+            f"❌ Failed: {failed}",
+            **_reply(msg.message_id)
+        )
+
+    except TelegramError as e:
+        await msg.reply_text(
+            f"❌ Demote All failed: {e.message}",
+            **_reply(msg.message_id)
+        )
 
 
 async def cmd_promoteme(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
+
     if not is_group(update):
-        return await msg.reply_text("❌ Ye command sirf groups mein kaam karta hai.")
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
     if not is_owner(update.effective_user.username):
         return
-    if not ctx.args or not ctx.args[0].isdigit() or int(ctx.args[0]) not in (1, 2, 3):
-        return await msg.reply_text("❌ Level 1, 2, ya 3 dalo! Example: /promoteme 3", **_reply(msg.message_id))
+
+    if (
+        not ctx.args
+        or not ctx.args[0].isdigit()
+        or int(ctx.args[0]) not in (1, 2, 3)
+    ):
+        return await msg.reply_text(
+            "❌ Please choose a promotion level: 1, 2, or 3.\nExample: /promoteme 3",
+            **_reply(msg.message_id)
+        )
+
     level = int(ctx.args[0])
+
     try:
-        await update.effective_chat.promote_member(update.effective_user.id, **PROMOTE_RIGHTS[level])
-        await msg.reply_text(f"✅ Khud ko promote kar liya — {PROMOTE_MSG[level]} 👑",
-                             parse_mode=ParseMode.MARKDOWN, **_reply(msg.message_id))
+        await update.effective_chat.promote_member(
+            update.effective_user.id,
+            **PROMOTE_RIGHTS[level]
+        )
+
+        await msg.reply_text(
+            f"✅ You have been promoted successfully — {PROMOTE_MSG[level]} 👑",
+            **_reply(msg.message_id)
+        )
+
     except TelegramError as e:
-        await msg.reply_text(f"❌ Promote nahi ho saka: {e.message}", **_reply(msg.message_id))
+        await msg.reply_text(
+            f"❌ Promotion failed: {e.message}",
+            **_reply(msg.message_id)
+        )
 
 
 # ── Help ───────────────────────────────────────────────────────────────────────
@@ -1822,6 +2669,10 @@ def main():
         ("mute",                 cmd_mute),
         ("unmute",               cmd_unmute),
         ("kick",                 cmd_kick),
+        ("ban",                  cmd_ban),
+        ("unban",                cmd_unban),
+        ("delete",               cmd_delete),
+        ("demoteall",            cmd_demoteall),
         ("promoteme",            cmd_promoteme),
     ]
     for cmd, fn in handlers:
