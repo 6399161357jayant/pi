@@ -125,6 +125,10 @@ CRUSH_VIDEOS = [
     "https://files.catbox.moe/pdprsc.mp4",
     "https://files.catbox.moe/ts7oj7.mp4",
 ]
+DANCE_VIDEOS = [
+    "https://files.catbox.moe/ch3h2q.mp4",
+    "https://files.catbox.moe/ej0510.mp4",
+]
 
 BOUNTY_PER_KILL_NORMAL  = 200
 BOUNTY_PER_KILL_PREMIUM = 400
@@ -495,6 +499,37 @@ async def cmd_couples(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_photo(
         photo=COUPLE_IMAGE,
+        caption=caption,
+        parse_mode="HTML"
+    )
+
+async def cmd_dance(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+
+    save_active_user(update.effective_user)
+
+    if update.message.reply_to_message:
+        save_active_user(update.message.reply_to_message.from_user)
+
+    msg = update.message
+
+    if not msg.reply_to_message or not msg.reply_to_message.from_user:
+        return await msg.reply_text(
+            "❌ reply to someone to use /dance"
+        )
+
+    sender = update.effective_user
+    target = msg.reply_to_message.from_user
+
+    video = random.choice(DANCE_VIDEOS)
+
+    caption = (
+        f'<a href="tg://user?id={sender.id}">{sender.first_name}</a> '
+        f'danced with '
+        f'<a href="tg://user?id={target.id}">{target.first_name}</a> 💕'
+    )
+
+    await msg.reply_video(
+        video=video,
         caption=caption,
         parse_mode="HTML"
     )
@@ -1655,6 +1690,7 @@ def main():
         ("crush",                cmd_crush),
         ("bite",                 cmd_bite),
         ("couples",              cmd_couples),
+        ("dance",                cmd_dance),
         ("hug",                  cmd_hug),
         ("love",                 cmd_love),
         ("kiss",                 cmd_kiss),
