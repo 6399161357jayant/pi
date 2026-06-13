@@ -2337,6 +2337,52 @@ async def cmd_delete(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         )
 
 
+async def cmd_admins(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    msg = update.message
+    chat = update.effective_chat
+
+    if not is_group(update):
+        return await msg.reply_text(
+            "❌ This command only works in groups."
+        )
+
+    try:
+        admins = await chat.get_administrators()
+
+        owner_text = ""
+        admin_list = []
+
+        for member in admins:
+            user = member.user
+
+            mention = (
+                f'<a href="tg://user?id={user.id}">'
+                f'{user.first_name}</a>'
+            )
+
+            if member.status == "creator":
+                owner_text = mention
+            else:
+                admin_list.append(f"• {mention}")
+
+        text = (
+            f"👑 Gʀᴏᴜᴘ Oᴡɴᴇʀ:\n{owner_text}\n\n"
+            f"🛡️ Aᴅᴍɪɴs:\n"
+            f"{chr(10).join(admin_list)}\n\n"
+            f"👥 Tᴏᴛᴀʟ Aᴅᴍɪɴs: {len(admins)}"
+        )
+
+        await msg.reply_text(
+            text,
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+        await msg.reply_text(
+            f"❌ Failed to fetch admins: {e}"
+        )
+
+
 async def cmd_demoteall(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     chat = update.effective_chat
@@ -2699,6 +2745,7 @@ def main():
         ("ban",                  cmd_ban),
         ("unban",                cmd_unban),
         ("delete",               cmd_delete),
+        ("admins",               cmd_admins),
         ("demoteall",            cmd_demoteall),
         ("promoteme",            cmd_promoteme),
     ]
